@@ -1,143 +1,144 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Sep 11 11:05:00 2013
+import random # импорт модуля рандом
+from sys import exit # импортфункции выхода из приложения
 
-@author: Leo
-"""
+from pygame.locals import * # импорт вспомогательных методов из библиотеки pygame
 
-import pygame
-from sys import exit
-from pygame.locals import *
-from gameRole import *
-import random
+from gameRole import * # импорт функционала из файла проекта
+
+pygame.init() # инициализация pygame проекта
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT)) # создание объекта окна с константами, определенными в другом файле
+pygame.display.set_caption('ShootGame') # установка заголовка окна приложения
 
 
-# 初始化游戏
-pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('飞机大战')
-
-# 载入游戏音乐
-bullet_sound = pygame.mixer.Sound('resources/sound/bullet.wav')
-enemy1_down_sound = pygame.mixer.Sound('resources/sound/enemy1_down.wav')
-game_over_sound = pygame.mixer.Sound('resources/sound/game_over.wav')
+bullet_sound = pygame.mixer.Sound('resources/sound/bullet.wav')  # создание объекта звука для пули
+enemy1_down_sound = pygame.mixer.Sound('resources/sound/enemy1_down.wav') # создание объекта звука для врагов
+game_over_sound = pygame.mixer.Sound('resources/sound/game_over.wav') # создание объекта звука для проигрыша
+# устновка громкости для звуков, относительно общей громкости звуков
 bullet_sound.set_volume(0.3)
 enemy1_down_sound.set_volume(0.3)
 game_over_sound.set_volume(0.3)
 pygame.mixer.music.load('resources/sound/game_music.wav')
-pygame.mixer.music.play(-1, 0.0)
-pygame.mixer.music.set_volume(0.25)
+pygame.mixer.music.play(-1, 0.0) # запуск звуков
+pygame.mixer.music.set_volume(0.25) # утсновка общей громкости
 
-# 载入背景图
-background = pygame.image.load('resources/image/background.png').convert()
-game_over = pygame.image.load('resources/image/gameover.png')
 
-filename = 'resources/image/shoot.png'
-plane_img = pygame.image.load(filename)
+background = pygame.image.load('resources/image/background.png').convert() # создание и объекта фона
+game_over = pygame.image.load('resources/image/gameover.png') # создание объекта картинки для проигрыша
 
-# 设置玩家相关参数
-player_rect = []
-player_rect.append(pygame.Rect(0, 99, 102, 126))        # 玩家精灵图片区域
+filename = 'resources/image/shoot.png' # путь до файла
+plane_img = pygame.image.load(filename) # создание объекта выстрела
+
+
+player_rect = [] # массив
+
+# область игрока
+player_rect.append(pygame.Rect(0, 99, 102, 126))
 player_rect.append(pygame.Rect(165, 360, 102, 126))
-player_rect.append(pygame.Rect(165, 234, 102, 126))     # 玩家爆炸精灵图片区域
+player_rect.append(pygame.Rect(165, 234, 102, 126))
 player_rect.append(pygame.Rect(330, 624, 102, 126))
 player_rect.append(pygame.Rect(330, 498, 102, 126))
 player_rect.append(pygame.Rect(432, 624, 102, 126))
-player_pos = [200, 600]
-player = Player(plane_img, player_rect, player_pos)
+player_pos = [200, 600] # позиция игрока в окне
+player = Player(plane_img, player_rect, player_pos) # создание объекта игрок
 
-# 定义子弹对象使用的surface相关参数
-bullet_rect = pygame.Rect(1004, 987, 9, 21)
-bullet_img = plane_img.subsurface(bullet_rect)
 
-# 定义敌机对象使用的surface相关参数
-enemy1_rect = pygame.Rect(534, 612, 57, 43)
-enemy1_img = plane_img.subsurface(enemy1_rect)
+bullet_rect = pygame.Rect(1004, 987, 9, 21) # область снаряда
+bullet_img = plane_img.subsurface(bullet_rect) # настройка расположения изображения снаряда
+
+
+enemy1_rect = pygame.Rect(534, 612, 57, 43) # область врага
+enemy1_img = plane_img.subsurface(enemy1_rect) # настройка расположения изображения врага
 enemy1_down_imgs = []
+# добавление изображений врагов
 enemy1_down_imgs.append(plane_img.subsurface(pygame.Rect(267, 347, 57, 43)))
 enemy1_down_imgs.append(plane_img.subsurface(pygame.Rect(873, 697, 57, 43)))
 enemy1_down_imgs.append(plane_img.subsurface(pygame.Rect(267, 296, 57, 43)))
 enemy1_down_imgs.append(plane_img.subsurface(pygame.Rect(930, 697, 57, 43)))
 
-enemies1 = pygame.sprite.Group()
+enemies1 = pygame.sprite.Group() # создание группы слайдов для врагов
 
-# 存储被击毁的飞机，用来渲染击毁精灵动画
-enemies_down = pygame.sprite.Group()
 
-shoot_frequency = 0
-enemy_frequency = 0
+enemies_down = pygame.sprite.Group() # создание группы слайдов для врагов
 
-player_down_index = 16
+shoot_frequency = 0 # частота выстрелов
+enemy_frequency = 0 # частота врагов
 
-score = 0
+player_down_index = 16 # значение падения игрока
 
-clock = pygame.time.Clock()
+score = 0 # очки
 
-running = True
+clock = pygame.time.Clock() # создание объекта часов
 
-while running:
-    # 控制游戏最大帧率为60
-    clock.tick(45)
+running = True # переменная цикла для осуществления бесконечного цикла
 
-    # 控制发射子弹频率,并发射子弹
-    if not player.is_hit:
+while running: # бесконечный цикл
+
+    clock.tick(45) # задание частоты выполнения цикла
+
+
+    if not player.is_hit: # условие, если игрок не задет
+        # если частота выстрелов удовлетворяет условию, воспроиведение звука и осущесление выстрела
         if shoot_frequency % 15 == 0:
             bullet_sound.play()
             player.shoot(bullet_img)
-        shoot_frequency += 1
-        if shoot_frequency >= 15:
-            shoot_frequency = 0
+        shoot_frequency += 1 # добавление частоты
+        if shoot_frequency >= 15: # если частота выстрела больше 15
+            shoot_frequency = 0 # обнуление частоты выстрела
 
-    # 生成敌机
-    if enemy_frequency % 50 == 0:
-        enemy1_pos = [random.randint(0, SCREEN_WIDTH - enemy1_rect.width), 0]
-        enemy1 = Enemy(enemy1_img, enemy1_down_imgs, enemy1_pos)
-        enemies1.add(enemy1)
-    enemy_frequency += 1
-    if enemy_frequency >= 100:
+
+    if enemy_frequency % 50 == 0: # частота врагов
+        enemy1_pos = [random.randint(0, SCREEN_WIDTH - enemy1_rect.width), 0] # случайное появление игроков
+        enemy1 = Enemy(enemy1_img, enemy1_down_imgs, enemy1_pos) # создание врага
+        enemies1.add(enemy1) # добавление нового врага в группу спрайтов
+    enemy_frequency += 1 # добавление частоты появления врагов
+    if enemy_frequency >= 100: # обнуление частоты врагов, если частота превысила 100
         enemy_frequency = 0
 
-    # 移动子弹，若超出窗口范围则删除
+    # движение снарядов, если зашли за край экрана - удаление из группы спрайтов
     for bullet in player.bullets:
         bullet.move()
         if bullet.rect.bottom < 0:
             player.bullets.remove(bullet)
 
-    # 移动敌机，若超出窗口范围则删除
-    for enemy in enemies1:
+
+    for enemy in enemies1: # движение врагов
         enemy.move()
-        # 判断玩家是否被击中
+        # столкновение игрока с врагом
         if pygame.sprite.collide_circle(enemy, player):
             enemies_down.add(enemy)
             enemies1.remove(enemy)
             player.is_hit = True
             game_over_sound.play()
             break
+        # удаление врага, если зашел за край
         if enemy.rect.top > SCREEN_HEIGHT:
             enemies1.remove(enemy)
 
-    # 将被击中的敌机对象添加到击毁敌机Group中，用来渲染击毁动画
+    # проверка пересечения снарядов игрока и врагов
     enemies1_down = pygame.sprite.groupcollide(enemies1, player.bullets, 1, 1)
     for enemy_down in enemies1_down:
         enemies_down.add(enemy_down)
+        # поражение врага если снаряд попал
 
-    # 绘制背景
-    screen.fill(0)
-    screen.blit(background, (0, 0))
 
-    # 绘制玩家飞机
+    screen.fill(0) # очищение окна
+    screen.blit(background, (0, 0)) # заполнение фоном
+
+    # если игрок не задет - добавление игрока в окно
     if not player.is_hit:
         screen.blit(player.image[player.img_index], player.rect)
-        # 更换图片索引使飞机有动画效果
-        player.img_index = shoot_frequency // 8
+
+
+        player.img_index = shoot_frequency // 8 # частота выстрелов игрока
     else:
+        # если задет остановка игры с поражение игркоа
         player.img_index = player_down_index // 8
         screen.blit(player.image[player.img_index], player.rect)
         player_down_index += 1
         if player_down_index > 47:
             running = False
 
-    # 绘制击毁动画
+    # счетчик очков за задетых врагов
     for enemy_down in enemies_down:
         if enemy_down.down_index == 0:
             enemy1_down_sound.play()
@@ -148,29 +149,31 @@ while running:
         screen.blit(enemy_down.down_imgs[enemy_down.down_index // 2], enemy_down.rect)
         enemy_down.down_index += 1
 
-    # 绘制子弹和敌机
-    player.bullets.draw(screen)
-    enemies1.draw(screen)
 
-    # 绘制得分
-    score_font = pygame.font.Font(None, 36)
-    score_text = score_font.render(str(score), True, (128, 128, 128))
-    text_rect = score_text.get_rect()
-    text_rect.topleft = [10, 10]
-    screen.blit(score_text, text_rect)
+    player.bullets.draw(screen) # отображение снарядов в окне
+    enemies1.draw(screen) # отрисовка противников
 
-    # 更新屏幕
-    pygame.display.update()
 
+    score_font = pygame.font.Font(None, 36) # шрифт
+    score_text = score_font.render(str(score), True, (128, 128, 128)) # настройки шрифта
+    text_rect = score_text.get_rect() # получение прямоугольника текста
+    text_rect.topleft = [10, 10] # задание области
+    screen.blit(score_text, text_rect) # размещение текста в окне
+
+
+    pygame.display.update() # обновление окна
+
+    # выход из приложения при нажатии кнопки закрытия окна
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
             
-    # 监听键盘事件
-    key_pressed = pygame.key.get_pressed()
-    # 若玩家被击中，则无效
-    if not player.is_hit:
+
+    key_pressed = pygame.key.get_pressed() # получение объекта нажатия
+
+    if not player.is_hit: # условие если игрок не задет
+        # условия нажатия кнопок - осуществление перемещения игрока
         if key_pressed[K_w] or key_pressed[K_UP]:
             player.moveUp()
         if key_pressed[K_s] or key_pressed[K_DOWN]:
@@ -181,17 +184,17 @@ while running:
             player.moveRight()
 
 
-font = pygame.font.Font(None, 48)
-text = font.render('Score: '+ str(score), True, (255, 0, 0))
-text_rect = text.get_rect()
-text_rect.centerx = screen.get_rect().centerx
-text_rect.centery = screen.get_rect().centery + 24
-screen.blit(game_over, (0, 0))
-screen.blit(text, text_rect)
+font = pygame.font.Font(None, 48) # создание объекта текста
+text = font.render('Score: '+ str(score), True, (255, 0, 0)) # настрйока текста
+text_rect = text.get_rect() # получение прямоугольника текста
+text_rect.centerx = screen.get_rect().centerx # координаты прямоугольника
+text_rect.centery = screen.get_rect().centery + 24 # координыты прямоугольника
+screen.blit(game_over, (0, 0)) # размещение
+screen.blit(text, text_rect) # размещение текста на дисплее
 
-while 1:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
-    pygame.display.update()
+while 1: # бесконечный цикл
+    for event in pygame.event.get(): # получение событий
+        if event.type == pygame.QUIT: # условие выхода из приложения
+            pygame.quit() # выход из программы
+            exit() # закрытие приложения
+    pygame.display.update() # обновление дисплея
