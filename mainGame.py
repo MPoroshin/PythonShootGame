@@ -210,12 +210,15 @@ while 1: # бесконечный цикл
             player.moveRight()
 
     if not running:
+        screen.blit(game_over, (0, 0))  # размещение
         font = pygame.font.Font(None, 48) # создание объекта текста
+        if score > top_score:
+            top_score = score
         text = font.render('Top Score: '+ str(top_score), True, (255, 0, 0)) # настрйока текста
         text_rect = text.get_rect() # получение прямоугольника текста
         text_rect.centerx = screen.get_rect().centerx # координаты прямоугольника
         text_rect.centery = screen.get_rect().centery + 24 # координыты прямоугольника
-        screen.blit(game_over, (0, 0)) # размещение
+
         screen.blit(text, text_rect) # размещение текста на дисплее
 
         if score >= top_score:
@@ -224,11 +227,11 @@ while 1: # бесконечный цикл
             with open("top_score.json", "w") as outfile:
                 data = {"top_score": score}
                 json.dump(data, outfile, ensure_ascii=False)
-        textTopScore = font.render('Score: ' + str(score), True, (255, 0, 0))  # настрйока текста
+        font2 = pygame.font.Font(None, 48)  # создание объекта текста
+        textTopScore = font2.render('Score: ' + str(score), True, (255, 0, 0))  # настрйока текста
         text_rect2 = textTopScore.get_rect()  # получение прямоугольника текста
         text_rect2.centerx = screen.get_rect().centerx  # координаты прямоугольника
         text_rect2.centery = screen.get_rect().centery + 134  # координыты прямоугольника
-        screen.blit(game_over, (0, 0))  # размещение
         screen.blit(textTopScore, text_rect2)
         # размещение текста на дисплее
 
