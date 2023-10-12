@@ -2,8 +2,17 @@ import random # импорт модуля рандом
 from sys import exit # импортфункции выхода из приложения
 
 from pygame.locals import * # импорт вспомогательных методов из библиотеки pygame
-
+import json
 from gameRole import * # импорт функционала из файла проекта
+
+
+top_score = 0
+with open("top_score.json") as f:
+    jsonData = json.load(f)
+    top_score = jsonData["top_score"]
+
+
+
 
 pygame.init() # инициализация pygame проекта
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT)) # создание объекта окна с константами, определенными в другом файле
@@ -25,22 +34,28 @@ pygame.mixer.music.set_volume(0.25) # утсновка общей громкос
 background = pygame.image.load('resources/image/background.png').convert() # создание и объекта фона
 game_over = pygame.image.load('resources/image/gameover.png') # создание объекта картинки для проигрыша
 
+
 filename = 'resources/image/shoot.png' # путь до файла
 plane_img = pygame.image.load(filename) # создание объекта выстрела
+def initPlayer(plane_img):
 
 
-player_rect = [] # массив
 
-# область игрока
-player_rect.append(pygame.Rect(0, 99, 102, 126))
-player_rect.append(pygame.Rect(165, 360, 102, 126))
-player_rect.append(pygame.Rect(165, 234, 102, 126))
-player_rect.append(pygame.Rect(330, 624, 102, 126))
-player_rect.append(pygame.Rect(330, 498, 102, 126))
-player_rect.append(pygame.Rect(432, 624, 102, 126))
-player_pos = [200, 600] # позиция игрока в окне
-player = Player(plane_img, player_rect, player_pos) # создание объекта игрок
 
+    player_rect = [] # массив
+
+    # область игрока
+    player_rect.append(pygame.Rect(0, 99, 102, 126))
+    player_rect.append(pygame.Rect(165, 360, 102, 126))
+    player_rect.append(pygame.Rect(165, 234, 102, 126))
+    player_rect.append(pygame.Rect(330, 624, 102, 126))
+    player_rect.append(pygame.Rect(330, 498, 102, 126))
+    player_rect.append(pygame.Rect(432, 624, 102, 126))
+    player_pos = [200, 600] # позиция игрока в окне
+    player = Player(plane_img, player_rect, player_pos) # создание объекта игрок
+    return player
+
+player = initPlayer(plane_img)
 
 bullet_rect = pygame.Rect(1004, 987, 9, 21) # область снаряда
 bullet_img = plane_img.subsurface(bullet_rect) # настройка расположения изображения снаряда
@@ -67,11 +82,20 @@ player_down_index = 16 # значение падения игрока
 
 score = 0 # очки
 
+
+
+
 clock = pygame.time.Clock() # создание объекта часов
 
 running = True # переменная цикла для осуществления бесконечного цикла
 
-while running: # бесконечный цикл
+
+
+
+while 1: # бесконечный цикл
+    if not running:
+        player_down_index = 16
+        score = 0
 
     clock.tick(45) # задание частоты выполнения цикла
 
@@ -131,6 +155,8 @@ while running: # бесконечный цикл
 
         player.img_index = shoot_frequency // 8 # частота выстрелов игрока
     else:
+
+
         # если задет остановка игры с поражение игркоа
         player.img_index = player_down_index // 8
         screen.blit(player.image[player.img_index], player.rect)
@@ -183,18 +209,48 @@ while running: # бесконечный цикл
         if key_pressed[K_d] or key_pressed[K_RIGHT]:
             player.moveRight()
 
+    if not running:
+        font = pygame.font.Font(None, 48) # создание объекта текста
+        text = font.render('Top Score: '+ str(top_score), True, (255, 0, 0)) # настрйока текста
+        text_rect = text.get_rect() # получение прямоугольника текста
+        text_rect.centerx = screen.get_rect().centerx # координаты прямоугольника
+        text_rect.centery = screen.get_rect().centery + 24 # координыты прямоугольника
+        screen.blit(game_over, (0, 0)) # размещение
+        screen.blit(text, text_rect) # размещение текста на дисплее
 
-font = pygame.font.Font(None, 48) # создание объекта текста
-text = font.render('Score: '+ str(score), True, (255, 0, 0)) # настрйока текста
-text_rect = text.get_rect() # получение прямоугольника текста
-text_rect.centerx = screen.get_rect().centerx # координаты прямоугольника
-text_rect.centery = screen.get_rect().centery + 24 # координыты прямоугольника
-screen.blit(game_over, (0, 0)) # размещение
-screen.blit(text, text_rect) # размещение текста на дисплее
+        if score >= top_score:
+            top_score = score
 
-while 1: # бесконечный цикл
-    for event in pygame.event.get(): # получение событий
-        if event.type == pygame.QUIT: # условие выхода из приложения
-            pygame.quit() # выход из программы
-            exit() # закрытие приложения
-    pygame.display.update() # обновление дисплея
+            with open("top_score.json", "w") as outfile:
+                data = {"top_score": score}
+                json.dump(data, outfile, ensure_ascii=False)
+        textTopScore = font.render('Score: ' + str(score), True, (255, 0, 0))  # настрйока текста
+        text_rect2 = textTopScore.get_rect()  # получение прямоугольника текста
+        text_rect2.centerx = screen.get_rect().centerx  # координаты прямоугольника
+        text_rect2.centery = screen.get_rect().centery + 134  # координыты прямоугольника
+        screen.blit(game_over, (0, 0))  # размещение
+        screen.blit(textTopScore, text_rect2)
+        # размещение текста на дисплее
+
+
+
+
+        gameOverFlag = True
+        while gameOverFlag: # бесконечный цикл
+            for event in pygame.event.get(): # получение событий
+                if event.type == pygame.QUIT: # условие выхода из приложения
+                    pygame.quit() # выход из программы
+                    exit() # закрытие приложения
+                elif event.type == pygame.KEYDOWN:
+                    running = True
+                    #player.is_hit = False
+                    player.img_index = 0
+                    player_down_index = 16
+
+
+                    score = 0
+                    game_over_sound.stop()
+                    gameOverFlag = False
+                    #player_pos = [200, 600]
+                    player = initPlayer(plane_img)
+            pygame.display.update() # обновление дисплея
